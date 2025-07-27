@@ -1,52 +1,36 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const ClinicalOnboardingSchema = new mongoose.Schema({
+const ClinicalOnboardingSchema = new Schema({
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true // Cada usuario tiene un solo registro de onboarding
+        unique: true
     },
-    // 2. Motivo principal para usar la app
     motivoPrincipal: {
         type: [String],
-        enum: [
-            'Ansiedad', 'Tristeza o depresión', 'Insomnio', 'Duelos o pérdidas',
-            'Rupturas amorosas', 'Estrés laboral o académico',
-            'Quiero conocerme/mejorar emocionalmente', 'Otro'
-        ],
+        enum: ['Ansiedad', 'Tristeza o depresión', 'Insomnio', 'Duelos o pérdidas', 'Rupturas amorosas', 'Estrés laboral o académico', 'Quiero conocerme/mejorar emocionalmente', 'Otro'],
         required: true
     },
-    // 3. Cuestionario rápido de bienestar emocional inicial (línea base)
     bienestarEmocionalInicial: {
-        // "En las últimas dos semanas, ¿qué tan seguido te has sentido nervioso, ansioso o al borde?"
-        nerviosoAnsioso: { type: Number, min: 0, max: 3 }, // Escala de 0 a 3
-        // "En las últimas dos semanas, ¿qué tan seguido te has sentido triste o sin esperanza?"
-        tristeSinEsperanza: { type: Number, min: 0, max: 3 }, // Escala de 0 a 3
-        fecha: { type: Date, default: Date.now }
+        nerviosoAnsioso: { type: Number, min: 0, max: 3, default: 0 },
+        tristeSinEsperanza: { type: Number, min: 0, max: 3, default: 0 }
     },
-    // 4. Disponibilidad y frecuencia deseada
     frecuenciaDeseada: {
         type: String,
-        enum: ['Diario', 'Cada dos días', 'Solo cuando lo necesite'],
-        required: true
+        enum: ['Diario', 'Cada dos días', 'Solo cuando lo necesite']
     },
     preferenciaContenido: {
         type: [String],
-        enum: [
-            'Ejercicios guiados', 'Conversación con IA',
-            'Retos de bienestar', 'Recomendaciones tipo “snack” diario'
-        ],
-        default: []
+        enum: ['Ejercicios guiados', 'Conversación con IA', 'Retos de bienestar', 'Recomendaciones tipo “snack” diario']
     },
-    // 5. Consentimiento informado
     consentimientoInformado: {
         terminosAceptados: { type: Boolean, required: true },
         iaNoReemplazaPsicologo: { type: Boolean, required: true },
         procesamientoDatosAceptado: { type: Boolean, required: true },
         modoAnonimoActivado: { type: Boolean, default: false }
     },
-    // 6. Opcional (para versión avanzada)
     informacionAvanzada: {
         nivelEducativo: String,
         diagnosticoPrevio: String,
@@ -61,13 +45,9 @@ const ClinicalOnboardingSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Middleware para marcar el onboarding como completo si se cumplen las condiciones
+// Middleware para marcar el onboarding como completo si se proporcionan los datos necesarios
 ClinicalOnboardingSchema.pre('save', function(next) {
-    const ci = this.consentimientoInformado;
-    if (
-        this.motivoPrincipal.length > 0 && this.frecuenciaDeseada &&
-        ci.terminosAceptados && ci.iaNoReemplazaPsicologo && ci.procesamientoDatosAceptado
-    ) {
+    if (this.isNew && this.motivoPrincipal && this.consentimientoInformado.terminosAceptados) {
         this.isOnboardingComplete = true;
     }
     next();

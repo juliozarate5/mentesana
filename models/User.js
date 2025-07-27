@@ -34,9 +34,30 @@ const UserSchema = new mongoose.Schema({
     clinicalOnboarding: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClinicalOnboarding'
+    },
+    // Referencia al plan de terapia generado por la IA.
+    therapyPlan: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TherapyPlan'
     }
 }, {
-    timestamps: true // Añade automáticamente los campos createdAt y updatedAt
+    timestamps: true, // Añade automáticamente los campos createdAt y updatedAt
+    toJSON: { virtuals: true }, // Asegura que las propiedades virtuales se incluyan en las respuestas JSON
+    toObject: { virtuals: true }
+});
+
+// Propiedad virtual para determinar si el perfil de usuario está completo.
+// Esto no se guarda en la BD, se calcula al momento de la consulta.
+UserSchema.virtual('isProfileComplete').get(function() {
+    // El perfil se considera completo si el campo userProfile tiene un ObjectId.
+    return !!this.userProfile;
+});
+
+// Propiedad virtual para determinar si el onboarding clínico está completo.
+// Requiere que el campo 'clinicalOnboarding' esté poblado.
+UserSchema.virtual('isOnboardingComplete').get(function() {
+    // El onboarding se considera completo si el objeto poblado existe y su flag es true.
+    return this.clinicalOnboarding ? this.clinicalOnboarding.isOnboardingComplete : false;
 });
 
 // Hook (middleware) de Mongoose para hashear la contraseña antes de guardarla

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const UserProfileSchema = new mongoose.Schema({
+const UserProfileSchema = new Schema({
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true // Asegura que cada usuario tenga un solo perfil
+        unique: true
     },
     pseudonimo: {
         type: String,
@@ -13,8 +14,7 @@ const UserProfileSchema = new mongoose.Schema({
     },
     edad: {
         type: Number,
-        required: [true, 'La edad es obligatoria para continuar'],
-        min: [13, 'Debes ser mayor de 13 años para usar la aplicación.']
+        required: [true, 'La edad es obligatoria.']
     },
     genero: {
         type: String,
@@ -22,13 +22,8 @@ const UserProfileSchema = new mongoose.Schema({
     },
     pais: {
         type: String,
-        trim: true,
-        required: [true, 'El país es obligatorio para continuar']
-    },
-    // Este campo se puede usar para controlar el flujo de la app
-    isProfileComplete: {
-        type: Boolean,
-        default: true // Se asume completo al crearse con los datos requeridos
+        required: [true, 'El país es obligatorio.'],
+        trim: true
     }
 }, {
     timestamps: true

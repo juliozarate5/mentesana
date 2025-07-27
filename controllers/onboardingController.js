@@ -1,39 +1,36 @@
-const User = require('../models/User.js');
 const ClinicalOnboarding = require('../models/ClinicalOnboarding.js');
-const asyncHandler = require('../utils/asyncHandler.js');
+const User = require('../models/User.js');
+const asyncHandler = require('../utils/asyncHandler');
 
 /**
- * @desc    Completar el onboarding clínico del usuario
+ * @desc    Completa el onboarding clínico para el usuario logueado
  * @route   POST /api/onboarding/clinical
  * @access  Private
  */
-const completeClinicalOnboarding = asyncHandler(async (req, res) => {
+exports.completeClinicalOnboarding = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
+    // 1. Verificar que el perfil de usuario esté completo
     const user = await User.findById(userId);
-    // Prerrequisito: el usuario debe tener su perfil completo
     if (!user.userProfile) {
         res.status(400);
-        throw new Error('Debe completar su perfil de usuario antes de iniciar el onboarding clínico.');
+        throw new Error('El perfil de usuario debe completarse antes de iniciar el onboarding clínico.');
     }
 
-    // Evitar que se complete más de una vez
-    const existingOnboarding = await ClinicalOnboarding.findOne({ user: userId });
-    if (existingOnboarding) {
+    // 2. Verificar que el onboarding no se haya completado previamente
+    if (user.clinicalOnboarding) {
         res.status(400);
-        throw new Error('El onboarding clínico ya ha sido completado.');
+        throw new Error('El onboarding clínico ya ha sido completado para este usuario.');
     }
 
-    // Crear el nuevo registro de onboarding
-    const newOnboarding = await ClinicalOnboarding.create({
-        user: userId,
-        ...req.body
-    });
+    // 3. Crear y guardar el nuevo documento de onboarding
+    const onboardingData = { ...req.body, user: userId };
+    const clinicalOnboarding = new ClinicalOnboarding(onboardingData);
+    await clinicalOnboarding.save();
 
-    // Actualizar la referencia en el documento del usuario
-    await User.findByIdAndUpdate(userId, { clinicalOnboarding: newOnboarding._id });
+    // 4. Vincular el onboarding al documento del usuario
+    user.clinicalOnboarding = clinicalOnboarding._id;
+    await user.save();
 
-    res.status(201).json(newOnboarding);
+    res.status(201).json(clinicalOnboarding);
 });
-
-module.exports = { completeClinicalOnboarding };

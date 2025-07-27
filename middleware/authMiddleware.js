@@ -13,7 +13,7 @@ const protect = asyncHandler(async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Obtener el usuario del token y adjuntarlo al objeto de la solicitud
-        req.user = await User.findById(decoded.id).select('-password');
+        req.user = await User.findById(decoded.user.id).select('-password');
 
         if (!req.user) {
             res.status(401);

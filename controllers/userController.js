@@ -1,40 +1,49 @@
 const User = require('../models/User.js');
 const UserProfile = require('../models/UserProfile.js');
-const asyncHandler = require('../utils/asyncHandler.js');
+const asyncHandler = require('../utils/asyncHandler');
 
 /**
- * @desc    Crear o actualizar el perfil de un usuario
+ * @desc    Crea o actualiza el perfil demográfico de un usuario.
  * @route   POST /api/users/profile
  * @access  Private
  */
-const completeUserProfile = asyncHandler(async (req, res) => {
-    const { edad, pais } = req.body;
-    const userId = req.user.id; // Obtenido del middleware de autenticación
+exports.completeUserProfile = asyncHandler(async (req, res) => {
+    const { pseudonimo, edad, genero, pais } = req.body;
+    const userId = req.user.id;
 
-    if (!edad || !pais) {
-        res.status(400);
-        throw new Error('La edad y el país son obligatorios.');
-    }
-
-    // Busca si ya existe un perfil para evitar duplicados
     let userProfile = await UserProfile.findOne({ user: userId });
-    let statusCode = 200; // OK por defecto para actualizaciones
 
     if (userProfile) {
-        // Si ya existe, lo actualiza
-        userProfile = await UserProfile.findByIdAndUpdate(userProfile._id, req.body, { new: true, runValidators: true });
-    } else {
-        // Si no existe, crea uno nuevo
-        userProfile = await UserProfile.create({
-            user: userId,
-            ...req.body
-        });
-        // Actualiza la referencia en el documento del usuario
-        await User.findByIdAndUpdate(userId, { userProfile: userProfile._id });
-        statusCode = 201; // Created
+        // Actualizar perfil existente
+        userProfile = await UserProfile.findOneAndUpdate(
+            { user: userId },
+            { $set: { pseudonimo, edad, genero, pais } },
+            { new: true, runValidators: true }
+        );
+        return res.status(200).json(userProfile);
     }
 
-    res.status(statusCode).json(userProfile);
+    // Crear nuevo perfil
+    userProfile = new UserProfile({ user: userId, pseudonimo, edad, genero, pais });
+    await userProfile.save();
+
+    // Vincular el perfil al documento del usuario
+    await User.findByIdAndUpdate(userId, { userProfile: userProfile._id });
+
+    res.status(201).json(userProfile);
 });
 
-module.exports = { completeUserProfile };
+/**
+ * @desc    Obtiene el perfil completo del usuario autenticado.
+ * @route   GET /api/users/me
+ * @access  Private
+ */
+exports.getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id)
+        .select('-password') // Excluir la contraseña de la respuesta
+        .populate('userProfile')
+        .populate('clinicalOnboarding')
+        .populate('therapyPlan');
+
+    res.json(user);
+});

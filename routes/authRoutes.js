@@ -38,10 +38,22 @@ const { registerUser, loginUser } = require('../controllers/authController.js');
  *                 type: string
  *                 format: password
  *     responses:
- *       201:
- *         description: Usuario registrado exitosamente
- *       400:
+ *       '201':
+ *         description: Usuario registrado exitosamente. Devuelve un token y el objeto del nuevo usuario.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNj..."
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       '400':
  *         description: Datos inválidos o el usuario ya existe
+ *       '500':
+ *         description: Error del servidor
  */
 router.post('/register', registerUser);
 
@@ -49,7 +61,7 @@ router.post('/register', registerUser);
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Inicia sesión para un usuario existente
+ *     summary: Inicia sesión y obtiene el token y los datos del usuario
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -68,10 +80,22 @@ router.post('/register', registerUser);
  *                 type: string
  *                 format: password
  *     responses:
- *       200:
- *         description: Login exitoso, devuelve token y estado del perfil/onboarding
- *       401:
+ *       '200':
+ *         description: Login exitoso. Devuelve un token y el objeto completo del usuario con sus perfiles asociados.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNj..."
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       '400':
  *         description: Credenciales inválidas
+ *       '500':
+ *         description: Error del servidor
  */
 router.post('/login', loginUser);
 

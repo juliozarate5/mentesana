@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const mongoConection = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI, {
-            dbName: 'psicologia',
+            dbName: 'psicologa',
             autoCreate: true
         })
         console.log('Successful Connect!')
